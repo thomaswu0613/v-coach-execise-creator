@@ -12,4 +12,14 @@
 
 - [ ]  improve video playback to frame by frame
 
+
+
+### Notes:
+
+###### Program can be devided to two parts:
+
+- playback mode - play video and see detacted results
+
+- stage edit mode - stop video and create new stages
+
     
