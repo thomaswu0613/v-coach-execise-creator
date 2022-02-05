@@ -10,6 +10,7 @@ from tools import detect_pose_with_draw, BodyLandMarks
 import mediapipe as mp
 import json
 from pathlib import Path
+import yaml
 layout = [[sg.Text('V-coach Execise Creator', size=(40, 1), justification='center', font='Helvetica 20',),sg.Text('Frame Count : ', size=(40, 1), justification='center', font='Helvetica 20',key="frame_count"),],
             [sg.Image(filename='', key='image'),sg.Listbox('',size=(30,30),key='listbox1',enable_events=True)],
             [sg.Image(filename='', key='image1')],
@@ -101,6 +102,9 @@ while True:
                         else:
                             s = True
                     name_win.close()
+                    with open("{}/{}/config.yaml".format(wpath,v["exe_name"]),"w+") as f:
+                        yaml.dump({"stages_count":len(stages_to_write)})
+                        f.close()
                     if s:
                         sg.popup_ok(title="Create Sucessful !")
                     else:
