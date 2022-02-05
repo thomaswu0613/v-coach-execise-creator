@@ -39,7 +39,6 @@ stage_count = 0
 
 while True:
     event, values = window.read(timeout=10)
-    print(event)
     if event == 'Exit' or event == sg.WIN_CLOSED or event == "Escape:9":
         window.close()
         cap.release()
