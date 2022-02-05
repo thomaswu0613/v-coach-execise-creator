@@ -14,7 +14,11 @@
 
 - [ ] wrap app to a library with main() function
 
-- [ ] improve video playback to frame by frame
+- [x] improve video playback to frame by frame
+
+- [ ] tidy repo file structure and rename files
+
+- [ ] write README.md
 
 ### Notes:
 
