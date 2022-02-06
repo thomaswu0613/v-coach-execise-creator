@@ -7,6 +7,7 @@ import numpy as np
 from tools import detect_pose_with_draw, BodyLandMarks
 import mediapipe as mp
 import yaml
+from shutil import copyfile
 
 def submit_layout():
     return [[sg.Text('Please Enter the name of execise you created:', size=(60, 1), justification='center', font='Helvetica 20',key="txt3"),sg.InputText(key="exe_name")],
@@ -88,11 +89,14 @@ while True:
                 try:
                     path_to_create = "{}/{}".format(v["select_folder"],v["exe_name"])
                     os.makedirs(path_to_create, exist_ok=False)
+                    nom_path = os.path.normpath(video_path)
+                    path_com = nom_path.split(os.sep)
+                    copyfile(video_path,str(path_to_create+"/{}".format(path_com[-1])))
                     with open("{}/stages.yaml".format(path_to_create),"w+") as f:
                         for i in range(len(stages_to_write)):
-                            f.seek(0,2)
-                            print("writing things")
                             yaml.dump({'stage{}'.format(i+1):stages_to_write[i]},f)
+                    with open("{}/config.yaml".format(path_to_create),"w+") as f:
+                        yaml.dump({'max_stages':len(stages_to_write)})
                 except FileExistsError:
                     sg.popup_error("Folder Exists! Please rename your execise.")
                 except Exception as e:
