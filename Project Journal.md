@@ -2,6 +2,10 @@
 
 ### Daily Logs:
 
+###### 2022-2-7:
+
+- Added scoring-needed files creation support
+
 ###### 2022-2-6:
 
 - Finished whole app with full execise files creation support (and fully functional)
