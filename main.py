@@ -33,7 +33,7 @@ video = False
 pause = False
 wait = False
 processing = False
-# reload = False
+ready = False
 
 listboxone = []
 stages_to_write = []
@@ -99,13 +99,13 @@ while True:
                             for i in range(len(stages_to_write)):
                                 yaml.dump({'stage{}'.format(i+1):stages_to_write[i]},f)
                         with open("{}/config.yaml".format(path_to_create),"w+") as f:
-                            yaml.dump({'max_stages':len(stages_to_write)})
+                            yaml.dump({'max_stages':len(stages_to_write)},f )
                     wait = True
                     args = shlex.split("{}/keypoints_from_video.py --activity {} --video {} --lookup {}/lookup_{}.pickle".format(scoring_lib_dir,v["exe_name"],video_path,path_to_create,v["exe_name"]))
                     if processing is False:
                         p=subprocess.Popen(args,stdout=subprocess.PIPE)
                         processing = True
-                    out, err = p.communicate()
+                    out, err = p.communicate(input=None, timeout=None)
                     if p.poll() is None:
                         wait = True
                         processing = True
@@ -113,7 +113,7 @@ while True:
                     else: 
                         if "Lookup Table Created" in out.decode():
                             sg.popup_ok("Creation Success!")
-                            break
+                            p.close()
                         else:
                             sg.popup_error("Create Failed!")
                 except FileExistsError:
@@ -123,8 +123,6 @@ while True:
                     sg.popup_error("Error!",e,tb)
                 else:
                     sg.popup_ok("Creation Success!")
-
-                    break
         
 
     if video:
@@ -151,4 +149,5 @@ while True:
         window["txt1"].update(value="")
         window["create_stage"].update(visible=False)
         frame_count = 0
+        video = False
 

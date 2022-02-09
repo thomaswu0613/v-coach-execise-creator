@@ -1,16 +1,19 @@
+#/home/thomasw/workspace/v-coach-execise-creator/IMG_105610890.MOV
+
+from unittest.mock import NonCallableMagicMock
+from vidgear.gears import VideoGear
+import numpy as np
 import cv2
 
-cap = cv2.VideoCapture('/home/thomasw/workspace/execise-creator-app/IMG_105610890.MOV')
+# open any valid video stream with stabilization enabled(`stabilize = True`)
+stream_stab = VideoGear(source="/home/thomasw/workspace/v-coach-execise-creator/IMG_105610890.MOV",framerate=15).start()
 
-while cap.isOpened():
-    ret, frame = cap.read()
-    # if frame is read correctly ret is True
-    if not ret:
-        print("Can't receive frame (stream end?). Exiting ...")
+while True:
+    frame_stab = stream_stab.read()
+    if frame_stab is None:
         break
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    cv2.imshow('frame', gray)
-    if cv2.waitKey(1) == ord('q'):
+    cv2.imshow("test", frame_stab)
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord("q"):
         break
-cap.release()
-cv2.destroyAllWindows()
+stream_stab.stop()
