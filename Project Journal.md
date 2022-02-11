@@ -24,6 +24,16 @@
 
 - [x] improve video playback to frame by frame
 
+- [ ] add stage sim warning
+
+- [ ] add lastest stage in video end warning
+
+- [ ] remove pose-compare lib support
+
+- [ ] add execise discription yaml feature
+
+- [ ] add comment system needed yaml file
+
 - [ ] tidy repo file structure and rename files
 
 - [ ] write README.md
