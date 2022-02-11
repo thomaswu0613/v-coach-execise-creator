@@ -4,7 +4,8 @@ from pathlib import Path
 import PySimpleGUI as sg
 import cv2
 import numpy as np
-from tools import detect_pose_with_draw, BodyLandMarks
+from HelperTools import detect_pose_with_draw
+from  BodyLMManager import BodyLandMarks
 import mediapipe as mp
 import yaml
 from shutil import copyfile
@@ -12,11 +13,12 @@ import subprocess, shlex
 
 def submit_layout():
     return [[sg.Text('Please Enter the name of execise you created:', size=(60, 1), justification='center', font='Helvetica 20',key="txt3"),sg.InputText(key="exe_name")],
+            [sg.Text('Please Enter execise discription', size=(60, 1), justification='center', font='Helvetica 20',key="txt5"),sg.InputText(key="exe_dis")],
                         [sg.Text('Please Select the path where you want to save the files:', size=(60, 1), justification='center', font='Helvetica 20',key="txt4"),sg.InputText(key="exe_name"),sg.FolderBrowse('Select Folder',key='select_folder')],
                         [sg.Button('Submit', size=(10, 1), font='Any 14',key='submit'),sg.Button('Quit Program', size=(15, 1), font='Any 14',key="quit"),sg.Button('Close this dialog and continue', size=(30, 1), font='Any 14',key="exit")]]
 
 
-layout = [[sg.Text('V-coach Execise Creator', size=(40, 1), justification='center', font='Helvetica 20',),sg.Text('Frame Count : ', size=(40, 1), justification='center', font='Helvetica 20',key="frame_count"),],
+layout = [[sg.Text('V-coach Execise Creator', size=(40, 1), justification='center', font='Helvetica 20',),sg.Text('Frame Count : ', size=(40, 1), justification='center', font='Helvetica 20',key="frame_count"),sg.Text('Frame Count : ', size=(40, 1), justification='center', font='Helvetica 20',key="total_frame_count"),],
             [sg.Image(filename='', key='image'),sg.Listbox('',size=(30,30),key='listbox1',enable_events=True)],
             [sg.Image(filename='', key='image1')],
             [sg.Text('', size=(40, 1), justification='center', font='Helvetica 20',key="txt1"),],
@@ -27,21 +29,15 @@ layout = [[sg.Text('V-coach Execise Creator', size=(40, 1), justification='cente
 window = sg.Window('V-coach Execise Creator',
                     layout, location=(800, 400),return_keyboard_events=True)
 
-
-
 video = False
 pause = False
-wait = False
-processing = False
-ready = False
 
+config = {}
 listboxone = []
 stages_to_write = []
 mp_pose = mp.solutions.pose
 frame_count = 0
 stage_count = 1
-scoring_lib_dir = "/home/thomasw/workspace/v-coach-pose-training-app/scoring_lib"
-python_path = "/home/thomasw/anaconda3/bin/python"
 
 while True:
     event, values = window.read(timeout=10)
@@ -70,7 +66,7 @@ while True:
 
     if event == 'create_stage':
         lm = BodyLandMarks(results, mp_pose)
-        stages_to_write.append(lm.return_all_points())
+        stages_to_write.append([lm.return_all_points(),frame_count])
         listboxone.append("Stage {}: Frame No. {}".format(str(stage_count),str(frame_count)))
         window['listbox1'].update(listboxone)
         stage_count+=1
@@ -80,6 +76,7 @@ while True:
 
         while True:
             e,v = submit_window.read(timeout=20)
+            # print(e,v)
             if e == "exit":
                 submit_window.close()
                 break
@@ -87,35 +84,28 @@ while True:
                 submit_window.close()
                 window.close()
                 break
-            if e == "submit" or wait is True:
+            if e == "submit":
                 try:
-                    if wait is False:
-                        path_to_create = "{}/{}".format(v["select_folder"],v["exe_name"])
-                        os.makedirs(path_to_create, exist_ok=False)
-                        nom_path = os.path.normpath(video_path)
-                        path_com = nom_path.split(os.sep)
-                        copyfile(video_path,str(path_to_create+"/{}".format(path_com[-1])))
-                        with open("{}/stages.yaml".format(path_to_create),"w+") as f:
-                            for i in range(len(stages_to_write)):
-                                yaml.dump({'stage{}'.format(i+1):stages_to_write[i]},f)
-                        with open("{}/config.yaml".format(path_to_create),"w+") as f:
-                            yaml.dump({'max_stages':len(stages_to_write)},f )
-                    wait = True
-                    args = shlex.split("{}/keypoints_from_video.py --activity {} --video {} --lookup {}/lookup_{}.pickle".format(scoring_lib_dir,v["exe_name"],video_path,path_to_create,v["exe_name"]))
-                    if processing is False:
-                        p=subprocess.Popen(args,stdout=subprocess.PIPE)
-                        processing = True
-                    out, err = p.communicate(input=None, timeout=None)
-                    if p.poll() is None:
-                        wait = True
-                        processing = True
-                        continue
-                    else: 
-                        if "Lookup Table Created" in out.decode():
-                            sg.popup_ok("Creation Success!")
-                            p.close()
-                        else:
-                            sg.popup_error("Create Failed!")
+                    if total_frame_count - stages_to_write[-1][-1] > 15:
+                        r = sg.popup_yes_no("The lastest stage is not at the end of the action,\nthis will affect accuracy, continue?",title="Warning!")
+                    if "Yes" in r:
+                        pass
+                    else:
+                        submit_window.close()
+                        break
+                    path_to_create = "{}/{}".format(v["select_folder"],v["exe_name"])
+                    os.makedirs(path_to_create, exist_ok=False)
+                    nom_path = os.path.normpath(video_path)
+                    path_com = nom_path.split(os.sep)
+                    copyfile(video_path,str(path_to_create+"/{}".format(path_com[-1])))
+                    with open("{}/stages.yaml".format(path_to_create),"w+") as f:
+                        for i in range(len(stages_to_write)):
+                            yaml.dump({'stage{}'.format(i+1):stages_to_write[i]},f)
+                    with open("{}/config.yaml".format(path_to_create),"w+") as f:
+                        config["max_stages"] = len(stages_to_write)
+                        config["execise_name"] = v["exe_name"]
+                        config["description"] = v["exe_dis"]
+                        yaml.dump(config,f )
                 except FileExistsError:
                     sg.popup_error("Folder Exists! Please rename your execise.")
                 except Exception as e:
@@ -126,6 +116,8 @@ while True:
         
 
     if video:
+        total_frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        window["total_frame_count"].update(value="Frame Count : {}".format(str(total_frame_count)))
         window["create_stage"].update(visible=True)
         window["txt1"].update(value="Press space bar to play the video.")
         if pause:
